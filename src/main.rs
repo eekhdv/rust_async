@@ -1,10 +1,9 @@
-use std::fs;
+use std::{fs, vec};
 use std::pin::Pin;
 use std::io::Result;
 use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt, AsyncReadExt};
 use tokio::time;
-use tokio::net::{TcpListener,TcpStream};
 use tokio::task;
 
 struct MockTcpStream {
@@ -18,10 +17,8 @@ impl AsyncRead for MockTcpStream {
             _: &mut Context<'_>,
             buf: &mut tokio::io::ReadBuf<'_>,
         ) -> Poll<Result<()>> {
-        let size: usize = std::cmp::min(self.read_data.len(), buf.capacity());
-        buf.clear();
         buf.put_slice(&self.read_data);
-        Poll::Ready(Ok(size))
+        Poll::Ready(Ok(())) 
     }
 }
 
@@ -45,6 +42,7 @@ impl AsyncWrite for MockTcpStream {
     }
 }
 
+impl Unpin for MockTcpStream {}
 
 #[tokio::main]
 async fn main() {
@@ -63,6 +61,21 @@ async fn main() {
 
     //     handle_connection(stream).await?;
     // }
+}
+
+#[tokio::test]
+async fn test_handle_connection() {
+    let input_bytes = b"GET / HTTP/1.1\r\n";
+    let mut contents = vec![0u8; 1024];
+    contents[..input_bytes.len()].clone_from_slice(input_bytes);
+    let mut stream = MockTcpStream {
+        read_data: contents,
+        write_data: Vec::new(),
+    };
+    handle_connection(stream).await;
+    let expected_contents = fs::read_to_string("hello.html").unwrap();
+    let expected_response = format!("HTTP/1.1 200 OK\r\n\r\n{}", "hello.html");
+    assert!(stream.write_data.starts_with(expected_response.as_bytes()));
 }
 
 async fn handle_connection(mut stream: impl AsyncWrite + AsyncRead + Unpin) {
