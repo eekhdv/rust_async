@@ -1,25 +1,53 @@
 use std::fs;
-use std::io::prelude::*;
+use std::pin::Pin;
+use std::io::Result;
+use std::task::{Context, Poll};
+use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt, AsyncReadExt};
 use tokio::time;
-use tokio::net::{TcpListener, TcpStream};
+use tokio::net::{TcpListener,TcpStream};
+use tokio::task;
 
-#[tokio::main]
-async fn main() -> std::io::Result<()> {
-    // Listen for incoming TCP connections on localhost port 7878
-    let listener = TcpListener::bind("127.0.0.1:7878").await?;
+struct MockTcpStream {
+    read_data: Vec<u8>,
+    write_data: Vec<u8>,
+}
 
-    // Block forever, handling each request that arrives at this IP address
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
-
-        handle_connection(stream).await?;
+impl AsyncRead for MockTcpStream {
+    fn poll_read(
+            self: Pin<&mut Self>,
+            _: &mut Context<'_>,
+            buf: &mut tokio::io::ReadBuf<'_>,
+        ) -> Poll<Result<()>> {
+        let size: usize = std::cmp::min(self.read_data.len(), buf.capacity());
+        buf.clear();
+        buf.put_slice(&self.read_data);
+        Poll::Ready(Ok(size))
     }
 }
 
-async fn handle_connection(mut stream: TcpStream) {
+#[tokio::main]
+async fn main() {
+    // Listen for incoming TCP connections on localhost port 7878
+    let listener = TcpListener::bind("127.0.0.1:7878").await.unwrap();
+    loop {
+        let (socket, _) = listener.accept().await.unwrap();
+        handle_connection(socket).await;
+    }
+
+
+    // Block forever, handling each request that arrives at this IP address
+    // for stream in listener.incoming() {
+    //     
+    //     let stream = stream.unwrap();
+
+    //     handle_connection(stream).await?;
+    // }
+}
+
+async fn handle_connection(mut stream: impl AsyncWrite + AsyncRead + Unpin) {
     // Read the first 1024 bytes of data from the stream
     let mut buffer = [0; 1024];
-    stream.read(&mut buffer).await.unwrap();
+    stream.read_buf(&mut buffer);
 
     let get = b"GET / HTTP/1.1\r\n";
     let sleep = b"GET /sleep HTTP/1.1\r\n";
@@ -39,6 +67,5 @@ async fn handle_connection(mut stream: TcpStream) {
     // Write response back to the stream,
     // and flush the stream to ensure the response is sent back to the client
     let response = format!("{status_line}{contents}");
-    stream.write_all(response.as_bytes()).await.unwrap();
-    stream.flush().await.unwrap();
+    stream.write_all(response.as_bytes());
 }
