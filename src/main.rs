@@ -25,6 +25,27 @@ impl AsyncRead for MockTcpStream {
     }
 }
 
+impl AsyncWrite for MockTcpStream {
+    fn poll_write(
+            self: Pin<&mut Self>,
+            _: &mut Context<'_>,
+            buf: &[u8],
+        ) -> Poll<std::result::Result<usize, std::io::Error>> {
+        self.write_data = Vec::from(buf);
+
+        Poll::Ready(Ok(buf.len()))
+    }
+
+    fn poll_flush(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<std::result::Result<(), std::io::Error>> {
+        Poll::Ready(Ok(()))
+    }
+
+    fn poll_shutdown(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<std::result::Result<(), std::io::Error>> {
+        Poll::Ready(Ok(()))
+    }
+}
+
+
 #[tokio::main]
 async fn main() {
     // Listen for incoming TCP connections on localhost port 7878
