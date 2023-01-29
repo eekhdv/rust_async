@@ -1,10 +1,10 @@
-use std::{fs, vec};
+use std::fs;
 use std::pin::Pin;
 use std::io::Result;
 use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt, AsyncReadExt};
+use tokio::net::TcpListener;
 use tokio::time;
-use tokio::task;
 
 struct MockTcpStream {
     read_data: Vec<u8>,
@@ -24,7 +24,7 @@ impl AsyncRead for MockTcpStream {
 
 impl AsyncWrite for MockTcpStream {
     fn poll_write(
-            self: Pin<&mut Self>,
+            mut self: Pin<&mut Self>,
             _: &mut Context<'_>,
             buf: &[u8],
         ) -> Poll<std::result::Result<usize, std::io::Error>> {
@@ -72,16 +72,17 @@ async fn test_handle_connection() {
         read_data: contents,
         write_data: Vec::new(),
     };
-    handle_connection(stream).await;
+    handle_connection(&mut stream).await;
+
     let expected_contents = fs::read_to_string("hello.html").unwrap();
-    let expected_response = format!("HTTP/1.1 200 OK\r\n\r\n{}", "hello.html");
+    let expected_response = format!("HTTP/1.1 200 OK\r\n\r\n{}", expected_contents);
     assert!(stream.write_data.starts_with(expected_response.as_bytes()));
 }
 
 async fn handle_connection(mut stream: impl AsyncWrite + AsyncRead + Unpin) {
     // Read the first 1024 bytes of data from the stream
-    let mut buffer = [0; 1024];
-    stream.read_buf(&mut buffer);
+    let mut buffer = Vec::with_capacity(1024);
+    stream.read_buf(&mut buffer).await.unwrap();
 
     let get = b"GET / HTTP/1.1\r\n";
     let sleep = b"GET /sleep HTTP/1.1\r\n";
@@ -101,5 +102,5 @@ async fn handle_connection(mut stream: impl AsyncWrite + AsyncRead + Unpin) {
     // Write response back to the stream,
     // and flush the stream to ensure the response is sent back to the client
     let response = format!("{status_line}{contents}");
-    stream.write_all(response.as_bytes());
+    stream.write_all(response.as_bytes()).await.unwrap();
 }
