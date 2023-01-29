@@ -36,12 +36,12 @@ async fn handle_connection(mut stream: TcpStream) {
     // Respond with greetings or a 404,
     // depending on the data in the request
     let (status_line, filename) = if buffer.starts_with(get) {
-        ("HTTP/1.1 200 OK\r\n\r\n", "hello.html")
+        ("HTTP/1.1 200 OK\r\n\r\n", "src/hello.html")
     } else if buffer.starts_with(sleep) {
         time::sleep(time::Duration::from_secs(5)).await;
-        ("HTTP/1.1 200 OK\r\n\r\n", "hello.html")
+        ("HTTP/1.1 200 OK\r\n\r\n", "src/hello.html")
     } else {
-        ("HTTP/1.1 404 NOT FOUND\r\n\r\n", "404.html")
+        ("HTTP/1.1 404 NOT FOUND\r\n\r\n", "src/404.html")
     };
     let contents = fs::read_to_string(filename).unwrap();
 
