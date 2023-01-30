@@ -2,36 +2,16 @@
 // use web_server::handlers;
 
 // use tokio::net::TcpListener;
+mod dbus;
+use dbus::notifications;
 
-use std::collections::HashMap;
 use std::error::Error;
 
 use tokio;
 
-use zbus::{zvariant::Value, Connection};
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let conn = Connection::session().await?;
-
-    let m = conn.call_method(
-        Some("org.freedesktop.Notifications"),
-        "/org/freedesktop/Notifications",
-        Some("org.freedesktop.Notifications"),
-        "Notify",
-        &(
-            "test-app",
-            0u32,
-            "dialog-information",
-            "Test title",
-            "Test body, teeeest body",
-            vec![""; 0],
-            HashMap::<&str, &Value>::new(),
-            5000,
-        ),
-    ).await?;
-    let reply: u32 = m.body().unwrap();
-    dbg!(reply);
+    let _send = notifications::send_notif().await?;
     Ok(())
 }
 
