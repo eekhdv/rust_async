@@ -3,7 +3,7 @@
 
 // use tokio::net::TcpListener;
 mod dbus;
-use dbus::notifications;
+use dbus::service;
 
 use std::error::Error;
 
@@ -11,8 +11,11 @@ use tokio;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let _send = notifications::send_notif().await?;
-    Ok(())
+    service::setup_server().await?;
+
+    loop {
+        std::future::pending::<()>().await;
+    }
 }
 
 // #[tokio::main] // ----------- web_server
