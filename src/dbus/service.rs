@@ -4,9 +4,12 @@ use super::notifications::Notifications;
 
 
 pub async fn setup_server() -> Result<(), Box<dyn std::error::Error>> {
+    let srvc_name = "org.freedesktop.Notifications";
+    let srvc_obj = "/org/freedesktop/Notifications";
+
     let _ = ConnectionBuilder::session()?
-        .name("org.freedesktop.Notifications")?
-        .serve_at("/org/freedesktop/Notifications", Notifications)?
+        .name(srvc_name)?
+        .serve_at(srvc_obj, Notifications)?
         .build()
         .await?;
     Ok(())
