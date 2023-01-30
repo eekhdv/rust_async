@@ -1,28 +1,24 @@
 use std::collections::HashMap;
-use std::error::Error;
 
-use zbus::{zvariant::Value, Connection};
+use zbus::{dbus_interface, zvariant::Value};
 
-pub async fn send_notif() -> Result<(), Box<dyn Error>> {
-    let conn = Connection::session().await?;
+pub struct Notifications;
 
-    let m = conn.call_method(
-        Some("org.freedesktop.Notifications"),
-        "/org/freedesktop/Notifications",
-        Some("org.freedesktop.Notifications"),
-        "Notify",
-        &(
-            "test-app",
-            0u32,
-            "dialog-information",
-            "Test title",
-            "Test body, teeeest body",
-            vec![""; 0],
-            HashMap::<&str, &Value>::new(),
-            5000,
-        ),
-    ).await?;
-    let reply: u32 = m.body().unwrap();
-    dbg!(reply);
-    Ok(())
+#[dbus_interface(name = "org.freedesktop.Notifications")]
+impl Notifications {
+    #[dbus_interface(name = "Notify")]
+    pub async fn notify(
+        &self,
+        app_name: &str,
+        _replaced_id: u32,
+        _app_icon: &str,
+        title: &str,
+        body: &str,
+        _actions: Vec<String>,
+        hints: HashMap<&str, Value<'_>>,
+        _expire_timeout: i32,
+        ) -> String {
+        format!("{app_name} -> {title}: {body} --- hints: {:?}", hints)
+    }
 }
+
