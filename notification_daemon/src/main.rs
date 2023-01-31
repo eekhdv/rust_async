@@ -1,123 +1,16 @@
 mod dbus;
 use dbus::service;
 
-use std::{error::Error, rc::Rc};
+mod qt;
+use qt::notif_widget::NotificationWidget;
 
-use cpp_core::{Ptr, Ref, StaticUpcast};
-use qt_core::{
-    qs, slot, ConnectionType, QBox, QObject, QPtr, QString, QTimer, SignalOfQString, SlotOfQString,
-    WidgetAttribute, WindowType,
-};
-use qt_ui_tools::ui_form;
-use qt_widgets::{QApplication, QDialog, QFrame, QLabel, QMainWindow, QWidget};
+use std::error::Error;
 
 use tokio;
 use uuid::Uuid;
 
-#[ui_form("../ui/form.ui")]
-#[derive(Debug)]
-struct Form {
-    widget: QBox<QWidget>,
-    titleLabel: QPtr<QLabel>,
-    bodyLabel: QPtr<QLabel>,
-}
-
-pub struct TestSpawner {
-    form: Form,
-    timer: QBox<QTimer>,
-    close_sig: QBox<SignalOfQString>,
-    qobj: QBox<QObject>,
-    main_window: QBox<QFrame>,
-}
-
-impl StaticUpcast<QObject> for TestSpawner {
-    unsafe fn static_upcast(ptr: Ptr<Self>) -> Ptr<QObject> {
-        ptr.form.widget.as_ptr().static_upcast()
-    }
-}
-
-impl TestSpawner {
-    fn new(main_window: QBox<QFrame>) -> Rc<Self> {
-        unsafe {
-            let widget = QWidget::new_0a();
-
-            let timer = QTimer::new_0a();
-            timer.set_interval(100);
-
-            let close_signal = SignalOfQString::new();
-
-            let qobject = QObject::new_0a();
-
-            let this = Rc::new(Self {
-                form: Form::load(),
-                timer: (timer),
-                close_sig: (close_signal),
-                qobj: (qobject),
-                main_window: (main_window),
-            });
-
-            this.init();
-
-            this
-        }
-    }
-
-    unsafe fn init(self: &Rc<Self>) {
-        self.timer.start_0a();
-
-        self.form
-            .titleLabel
-            .set_text(&QString::from_std_str("teeestLABEL"));
-        self.form
-            .bodyLabel
-            .set_text(&QString::from_std_str("teeest"));
-
-        self.close_sig.connect_with_type(
-            ConnectionType::QueuedConnection,
-            &self.slot_on_widget_close(),
-        );
-    }
-
-    fn show(self: &Rc<Self>) {
-        unsafe {
-            self.form.widget.show();
-        }
-    }
-
-    #[slot(SlotOfQString)]
-    unsafe fn on_widget_close(self: &Rc<Self>, _widget: Ref<QString>) {
-        self.form.widget.close();
-    }
-
-    #[slot(SlotOfQString)]
-    pub unsafe fn on_spawn_notification(self: &Rc<Self>, _guid: Ref<QString>) {
-        let widget = QWidget::new_1a(&self.main_window);
-
-        let guid = Uuid::new_v4().to_string();
-        widget.set_object_name(&qs(&guid));
-
-        widget.set_attribute_1a(WidgetAttribute::WADeleteOnClose);
-
-        // Set the default action overlay
-        let overlay = QDialog::new_1a(&widget);
-        overlay.set_object_name(&qs("overlay"));
-
-        overlay.set_window_flags(
-            WindowType::WindowStaysOnTopHint
-                | WindowType::Tool
-                | WindowType::FramelessWindowHint
-                | WindowType::BypassWindowManagerHint,
-        );
-
-        overlay.set_attribute_1a(WidgetAttribute::WADeleteOnClose);
-
-        overlay.set_window_opacity(0.0);
-
-        widget.show();
-        overlay.show();
-        overlay.hide();
-    }
-}
+use qt_widgets::QApplication;
+use qt_core;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -126,26 +19,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // loop {
     //     std::future::pending::<()>().await;
     // }
-    QApplication::init(|app| unsafe {
-        let notification_windows = QMainWindow::new_0a();
-        let desktop = QApplication::desktop();
-        let top_right = desktop.screen_geometry().top_right();
+    
+    unsafe {qt_core::QCoreApplication::set_attribute_1a(qt_core::ApplicationAttribute::AAShareOpenGLContexts)};
+    QApplication::init(|_| {
 
-        notification_windows.set_window_flags(
-            WindowType::BypassWindowManagerHint
-                | WindowType::FramelessWindowHint
-                | WindowType::WindowStaysOnTopHint,
-        );
-
-        notification_windows.set_attribute_1a(WidgetAttribute::WADeleteOnClose);
-
-        let frame = QFrame::new_1a(notification_windows.as_ptr());
-
-        notification_windows.set_geometry_4a(top_right.x(), 0, 0, 0);
-
-        notification_windows.show();
-
-        let test = TestSpawner::new(frame);
+        let test = NotificationWidget::new();
 
         test.show();
 
@@ -187,7 +65,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         //     widget.find_child(name)
         //     // overlay.hide();
         // }
-        QApplication::exec()
+        unsafe {
+            QApplication::exec()
+        }
     });
 }
 
