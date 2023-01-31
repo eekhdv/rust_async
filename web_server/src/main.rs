@@ -1,7 +1,7 @@
-mod web_server;
+mod services;
 
 use tokio::net::TcpListener;
-use web_server::handlers;
+use services::handlers;
 
 #[tokio::main]
 async fn main() {

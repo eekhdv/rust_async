@@ -168,6 +168,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "notification_daemon"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "tokio",
+]
+
+[[package]]
 name = "num_cpus"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -237,14 +245,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fb5a58c1855b4b6819d59012155603f0b22ad30cad752600aadfcb695265519a"
 dependencies = [
  "bitflags",
-]
-
-[[package]]
-name = "rust_async"
-version = "0.1.0"
-dependencies = [
- "futures",
- "tokio",
 ]
 
 [[package]]
@@ -340,6 +340,14 @@ name = "wasi"
 version = "0.11.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
+
+[[package]]
+name = "web_server"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "tokio",
+]
 
 [[package]]
 name = "winapi"

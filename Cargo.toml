@@ -1,10 +1,6 @@
-[package]
-name = "rust_async"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = [
+    "web_server",
+    "notification_daemon",
+]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-tokio = { version = "1", features = ["full"] }
-futures = "0.3"
