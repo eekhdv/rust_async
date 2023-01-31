@@ -17,8 +17,7 @@ impl Notifications {
         _actions: Vec<String>,
         hints: HashMap<&str, Value<'_>>,
         _expire_timeout: i32,
-        ) -> String {
+    ) -> String {
         format!("{app_name} -> {title}: {body} --- hints: {:?}", hints)
     }
 }
-
