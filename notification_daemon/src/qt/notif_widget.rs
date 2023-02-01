@@ -1,7 +1,7 @@
 use std::{error::Error, rc::Rc};
 use cpp_core::{Ptr, Ref, StaticUpcast};
 use qt_core::{
-    qs, slot, ConnectionType, QBox, QObject, QPtr, QString, QTimer, SignalOfQString, SlotOfQString,
+    qs, slot, ConnectionType, QBox, QObject, QPtr, QString, QTimer, QRect, SignalOfQString, SlotOfQString,
     WidgetAttribute, WindowType,
 };
 use qt_ui_tools::ui_form;
@@ -52,6 +52,8 @@ impl NotificationWidget {
         // self.form
         //     .frame
         //     .set_frame_style(6);
+        self.form.widget.set_window_flags(WindowType::Window | WindowType::BypassWindowManagerHint |  WindowType::FramelessWindowHint | WindowType::WindowStaysOnTopHint);
+        // self.form.frame.set_window_flags(WindowType::WindowStaysOnTopHint | WindowType::BypassWindowManagerHint |  WindowType::FramelessWindowHint);
         self.form
             .app_title_label
             .set_text(&QString::from_std_str("APPLICATION NAME"));
