@@ -1,13 +1,11 @@
-use console_engine::pixel;
-use console_engine::Color;
-use console_engine::KeyCode;
+use console_engine::{pixel, Color, KeyCode};
 
-trait CoordGet<T> {
+trait GetSelected<T> {
     fn get_selected_x(&self) -> i32;
     fn get_selected_y(&self) -> i32;
 }
 
-trait CoordSet<T> {
+trait SetSelected<T> {
     fn set_selected_x(&mut self, x: i32);
     fn set_selected_y(&mut self, y: i32);
 }
@@ -36,7 +34,7 @@ impl Rect {
     }
 }
 
-impl CoordGet<Select> for Rect {
+impl GetSelected<Select> for Rect {
     fn get_selected_x(&self) -> i32 {
         if self.selection == Select::LeftUp { self.left_up.0 } else { self.right_down.0 }
     }
@@ -46,7 +44,7 @@ impl CoordGet<Select> for Rect {
     }
 }
 
-impl CoordSet<Select> for Rect {
+impl SetSelected<Select> for Rect {
     fn set_selected_x(&mut self, x: i32) {
         if self.selection == Select::LeftUp { self.left_up.0 = x; } else { self.right_down.0 = x; }
     }
