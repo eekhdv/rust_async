@@ -141,6 +141,7 @@ fn main() {
             rect.fill = !rect.is_fill();
         }
 
+        engine.print(rect.left_up.0 + 1, rect.left_up.1 + (rect.right_down.1 - rect.left_up.1) / 2, "hello");
         engine.draw(); // draw the screen
     }
 }
