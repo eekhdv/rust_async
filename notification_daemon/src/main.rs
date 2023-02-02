@@ -114,12 +114,12 @@ fn main() {
             && rect.get_selected_y() > 0
             && (rect.selection == Select::LeftUp)
         {
-            rect.set_selected_y(rect.get_selected_y() + 1);
+            rect.set_selected_y(rect.get_selected_y() - 1);
         }
         if (engine.is_key_held(KeyCode::Char('6')) || engine.is_key_pressed(KeyCode::Right))
             && rect.get_selected_x() < engine.get_width() as i32 - 1
         {
-            rect.set_selected_y(rect.get_selected_y() - 1);
+            rect.set_selected_x(rect.get_selected_x() + 1);
         }
         if (engine.is_key_held(KeyCode::Char('2')) || engine.is_key_pressed(KeyCode::Down))
             && rect.get_selected_x() < engine.get_height() as i32 - 1
