@@ -1,4 +1,5 @@
-use crate::dbus::prep_notifications::{DbusChannel, Notification};
+use super::prep_notifications::{DbusChannel, Notification, Rect};
+
 use std::collections::HashMap;
 
 use tokio::sync::mpsc::Sender;
@@ -28,15 +29,13 @@ impl NotificationsHandler {
             title: (title),
             body: (body),
             expire_timeout: (expire_timeout),
+            window: Rect::default(),
         };
-        println!("\n[INFO] New notification!");
-        println!("{:?}", _hints);
         if let Err(_) = self.dbus_tx
             .send(DbusChannel::Notify {
                 notification: notif,
             })
             .await {
-            println!("[ERROR] Receiver dropped");
             return Ok(1);
         }
         Ok(0)
