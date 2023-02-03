@@ -1,145 +1,140 @@
-use console_engine::{pixel, Color, KeyCode};
+use console_engine::{pixel, Color, KeyCode, ConsoleEngine};
+mod dbus;
+use dbus::{prep_notifications, raw_handlers, service};
 
-trait GetSelected<T> {
-    fn get_selected_x(&self) -> i32;
-    fn get_selected_y(&self) -> i32;
+use std::error::Error;
+use std::sync::Arc;
+
+use tokio;
+use tokio::sync::{mpsc, Mutex};
+
+#[derive(Debug, Clone)]
+struct NotificationsDrawer {
+    // notification_boxes: Rc<RefCell<Vec<prep_notifications::Notification>>>,
+    notification_boxes: Arc<Mutex<Vec<prep_notifications::Notification>>>,
 }
 
-trait SetSelected<T> {
-    fn set_selected_x(&mut self, x: i32);
-    fn set_selected_y(&mut self, y: i32);
+struct ScreenDimensions {
+    width: u32,
+    height: u32,
 }
 
-#[derive(Debug, PartialEq, Clone)]
-enum Select {
-    LeftUp,
-    RightDown,
-}
 
-#[derive(Debug, PartialEq, Clone)]
-struct Rect {
-    left_up: (i32, i32),
-    right_down: (i32, i32),
-    selection: Select,
-    fill: bool,
-}
+// impl Iterator for NotificationsDrawer {
+//     type Item = prep_notifications::Notification;
+// 
+//     fn next(&mut self) -> Option<Self::Item> {
+//         self.notification_boxes.pop()
+//     }
+// }
 
-impl Rect {
+impl NotificationsDrawer {
     fn new() -> Self {
-        Self { left_up: (4, 4), right_down: (18, 12), selection: Select::LeftUp, fill: false }
-    }
-
-    fn is_fill(&self) -> bool {
-        self.fill
+        NotificationsDrawer { notification_boxes: Arc::new(Mutex::new(vec![])) } 
     }
 }
 
-impl GetSelected<Select> for Rect {
-    fn get_selected_x(&self) -> i32 {
-        if self.selection == Select::LeftUp { self.left_up.0 } else { self.right_down.0 }
-    }
-
-    fn get_selected_y(&self) -> i32 {
-        if self.selection == Select::LeftUp { self.left_up.1 } else { self.right_down.1 }
+impl ScreenDimensions {
+    fn new(w: u32, h: u32) -> Self {
+        Self { width: w, height: h }
     }
 }
 
-impl SetSelected<Select> for Rect {
-    fn set_selected_x(&mut self, x: i32) {
-        if self.selection == Select::LeftUp { self.left_up.0 = x; } else { self.right_down.0 = x; }
-    }
-
-    fn set_selected_y(&mut self, y: i32) {
-        if self.selection == Select::LeftUp { self.left_up.1 = y } else { self.right_down.1 = y; }
-    }
-}
-
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
     // initializes a screen filling the terminal of at least 50x20 of size with a target of 3 frame per second
-    let mut engine = console_engine::ConsoleEngine::init_fill_require(50, 20, 5).unwrap();
+    // let mut engine = console_engine::ConsoleEngine::init_fill(10).unwrap();
 
-    let mut rect = Rect::new();
+    let (dbus_tx, mut dbus_rx) = mpsc::channel(128);
+    let notif_handler = raw_handlers::NotificationsHandler { dbus_tx: (dbus_tx) };
+
+    let notif_drawer = NotificationsDrawer::new();
+    let notif_clone = Arc::clone(&notif_drawer.notification_boxes);
+    let notif_drawer_clone = Arc::clone(&notif_drawer.notification_boxes);
+
+    service::setup_server(notif_handler).await?;
+
+    tokio::task::spawn(async move {
+        while let Some(n) = dbus_rx.recv().await {
+            match n {
+                prep_notifications::DbusChannel::Notify { notification } => {
+                    // let _engine = console_engine::ConsoleEngine::init_fill_require(50, 20, 10).unwrap();
+                    let mut lock1 = notif_clone.lock().await;
+                    lock1.push(notification);
+                    // notif_clone.try_lock().unwrap().push(notification);
+                    // println!("test-> {:#?}", lock1.pop());
+                }
+            }
+        }
+    });
+
+    tokio::task::spawn(async move {
+        let mut engine = console_engine::ConsoleEngine::init_fill(10).unwrap();
+        let cur_screen = ScreenDimensions::new(engine.get_width(), engine.get_height());
+        loop {
+            let lock = notif_drawer_clone.lock().await;
+            for _notif_box in lock.iter() {
+                engine.wait_frame(); // wait for next frame + capture inputs
+                engine.check_resize(); // resize the terminal if its size has changed
+                                       // exit check
+                // if engine.is_key_pressed(KeyCode::Char('q')) {
+                //     break;
+                // }
+                engine.clear_screen();
+                engine.print(0, 0, format!("width: {}, height: {}", cur_screen.width, cur_screen.height).as_str());
+                engine.rect(
+                    4,
+                    4,
+                    18,
+                    12,
+                    pixel::pxl('#'),
+                );
+
+                engine.rect(
+                    20,
+                    20,
+                    50,
+                    39,
+                    pixel::pxl('#'),
+                );
+
+                engine.print(4, 4 + (12 - 4) / 2, "hello");
+                engine.draw(); // draw the screen
+            }
+        }
+    });
+
+    loop {
+        std::future::pending::<()>().await;
+    }
 
     // main loop, be aware that you'll have to break it because ctrl+C is captured
-    loop {
-        engine.wait_frame(); // wait for next frame + capture inputs
-        engine.check_resize(); // resize the terminal if its size has changed
-                               // exit check
-        if engine.is_key_pressed(KeyCode::Char('q')) {
-            break;
-        }
-        engine.clear_screen();
-        if rect.is_fill() {
-            engine.fill_rect(
-                rect.left_up.0,
-                rect.left_up.1,
-                rect.right_down.0,
-                rect.right_down.1,
-                pixel::pxl('#'),
-            );
-        } else {
-            engine.rect(
-                rect.left_up.0,
-                rect.left_up.1,
-                rect.right_down.0,
-                rect.right_down.1,
-                pixel::pxl('#'),
-            );
-        }
-        engine.print(0, 1, "Position: [2] [4] [6] [8] ; Change point: [5]   ");
+    // loop {
+    //     engine.wait_frame(); // wait for next frame + capture inputs
+    //     engine.check_resize(); // resize the terminal if its size has changed
+    //                            // exit check
+    //     if engine.is_key_pressed(KeyCode::Char('q')) {
+    //         break;
+    //     }
+    //     engine.clear_screen();
+    //     engine.print(0, 0, format!("{}", engine.get_screen().get_height()).as_str());
+    //     engine.rect(
+    //         4,
+    //         4,
+    //         18,
+    //         12,
+    //         pixel::pxl('#'),
+    //     );
 
-        engine.print(
-            0,
-            0,
-            format!("[S]hape: Rect, [F]ill : {}   ", rect.is_fill()).as_str(),
-        );
+    //     engine.rect(
+    //         20,
+    //         20,
+    //         50,
+    //         39,
+    //         pixel::pxl('#'),
+    //     );
 
-        // display the configured coordinates and highlight the current one
-        if engine.frame_count % 4 >= 2 {
-            engine.set_pxl(rect.left_up.0, rect.left_up.1, pixel::pxl_fg('#', Color::Cyan));
-            engine.set_pxl(rect.right_down.0, rect.right_down.1, pixel::pxl_fg('#', Color::Cyan));
-            
-            engine.set_pxl(
-                rect.get_selected_x(),
-                rect.get_selected_y(),
-                pixel::pxl_fg('#', Color::Yellow),
-            );
-        }
-
-        // handling coordinate displacement with a particular case for selection 1 of circle
-        // because it's the range selection
-        if (engine.is_key_held(KeyCode::Char('8')) || engine.is_key_pressed(KeyCode::Up))
-            && rect.get_selected_y() > 0
-            && (rect.selection == Select::LeftUp)
-        {
-            rect.set_selected_y(rect.get_selected_y() - 1);
-        }
-        if (engine.is_key_held(KeyCode::Char('6')) || engine.is_key_pressed(KeyCode::Right))
-            && rect.get_selected_x() < engine.get_width() as i32 - 1
-        {
-            rect.set_selected_x(rect.get_selected_x() + 1);
-        }
-        if (engine.is_key_held(KeyCode::Char('2')) || engine.is_key_pressed(KeyCode::Down))
-            && rect.get_selected_x() < engine.get_height() as i32 - 1
-            && (rect.selection == Select::LeftUp)
-        {
-            rect.set_selected_y(rect.get_selected_y() + 1);
-        }
-        if (engine.is_key_held(KeyCode::Char('4')) || engine.is_key_pressed(KeyCode::Left))
-            && rect.get_selected_x() > 0
-        {
-            rect.set_selected_x(rect.get_selected_x() - 1);
-        }
-        // switch between configured coordinates
-        if engine.is_key_pressed(KeyCode::Char('5')) || engine.is_key_pressed(KeyCode::Char(' ')) {
-            rect.selection = if rect.selection == Select::LeftUp { Select::RightDown } else { Select::LeftUp }
-        }
-        // toggle fill flag
-        if engine.is_key_pressed(KeyCode::Char('f')) {
-            rect.fill = !rect.is_fill();
-        }
-
-        engine.print(rect.left_up.0 + 1, rect.left_up.1 + (rect.right_down.1 - rect.left_up.1) / 2, "hello");
-        engine.draw(); // draw the screen
-    }
+    //     engine.print(4, 4 + (12 - 4) / 2, "hello");
+    //     engine.draw(); // draw the screen
+    // }
 }
