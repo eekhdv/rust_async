@@ -56,8 +56,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
                 DbusChannel::CloseNotification { unique_id } => {
                     let mut lock = n_catcher.lock().await;
-                    let index = lock.iter().position(|x| x.unique_id == unique_id).unwrap();
-                    lock.remove(index);
+                    if let Some(index) = lock.iter().position(|x| x.unique_id == unique_id) {
+                        lock.remove(index);
+                    }
                 }
             }
         }
