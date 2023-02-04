@@ -63,7 +63,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     tokio::task::spawn(async move {
         let mut engine = ConsoleEngine::init_fill(10).unwrap();
-        let cur_screen = ScreenDimensions::new(engine.get_width(), engine.get_height());
+        let cur_screen = ScreenDimensions::new(engine.get_width() as i32, engine.get_height() as i32);
 
         loop {
             engine.wait_frame();
@@ -79,7 +79,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let mut cur_x = 1;
             let mut cur_y = 1;
 
-            engine.rect_border(0, 0, cur_screen.width as i32 - 1, cur_screen.height as i32 - 1, BorderStyle::new_light());
+            engine.rect_border(0, 0, cur_screen.width - 1, cur_screen.height - 1, BorderStyle::new_light());
             // engine.print(
             //     0,
             //     0,
@@ -108,7 +108,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                 cur_y += 8;
 
-                if cur_y >= cur_screen.height.try_into().unwrap() {
+                if cur_y >= cur_screen.height {
                     cur_x += 30;
                     cur_y = 1;
                 }
