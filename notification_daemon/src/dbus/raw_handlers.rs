@@ -1,21 +1,23 @@
-use super::prep_notifications::{DbusChannel, Notification, Rect};
+use super::prep_notifications::{DbusChannel, Notification};
 
 use std::collections::HashMap;
 
 use tokio::sync::mpsc::Sender;
 use zbus::{dbus_interface, zvariant::Value};
 
+#[derive(Debug)]
 pub struct NotificationsHandler {
     pub dbus_tx: Sender<DbusChannel>,
+    pub n_counter: u32,
 }
 
 #[dbus_interface(name = "org.freedesktop.Notifications")]
 impl NotificationsHandler {
     #[dbus_interface(name = "Notify")]
     pub async fn notify(
-        &self,
+        &mut self,
         app_name: String,
-        _replaced_id: u32,
+        replaced_id: u32,
         app_icon: String,
         title: String,
         body: String,
@@ -23,24 +25,36 @@ impl NotificationsHandler {
         _hints: HashMap<String, Value<'_>>,
         expire_timeout: i32,
     ) -> zbus::fdo::Result<u32> {
-        let notif = Notification {
+        let n_id = if replaced_id == 0 {
+            self.n_counter += 1;
+            self.n_counter
+        } else {
+            replaced_id
+        };
+
+        let n_timer = match &expire_timeout {
+            ..=-1 => 10_000,
+            0 => i32::MAX,
+            1.. => expire_timeout,
+        };
+
+        let n = Notification {
             app_name: (app_name),
             app_icon: (app_icon),
             title: (title),
             body: (body),
-            expire_timeout: (expire_timeout),
-            window: Rect::default(),
+            expire_timeout: (n_timer),
+            unique_id: n_id,
         };
+
         if let Err(_) = self
             .dbus_tx
-            .send(DbusChannel::Notify {
-                notification: notif,
-            })
+            .send(DbusChannel::Notify { notification: n })
             .await
         {
             return Ok(1);
         }
-        Ok(0)
+        Ok(n_id)
     }
 
     #[dbus_interface(name = "GetCapabilities")]
@@ -54,8 +68,13 @@ impl NotificationsHandler {
     }
 
     #[dbus_interface(name = "CloseNotification")]
-    pub async fn close_notification(&self) {
-        unimplemented!()
+    pub async fn close_notification(&self, unique_id: u32) {
+        self.dbus_tx
+            .send(DbusChannel::CloseNotification {
+                unique_id: (unique_id),
+            })
+            .await
+            .unwrap();
     }
 
     #[dbus_interface(name = "GetServerInformation")]
