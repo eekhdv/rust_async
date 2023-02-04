@@ -16,8 +16,7 @@ pub struct Notification {
 
 pub fn set_notif_lifetime(id: u32, millis: u64) {
     tokio::task::spawn(async move {
-        tokio::time::sleep(std::time::Duration::from_millis(millis))
-            .await;
+        tokio::time::sleep(std::time::Duration::from_millis(millis)).await;
         let connection = zbus::Connection::session().await.unwrap();
         let _ = connection
             .call_method(
