@@ -1,42 +1,15 @@
 mod dbus;
-use dbus::prep_notifications::{DbusChannel, Notification};
+use dbus::prep_notifications::{DbusChannel, NotificationsDrawer, ScreenDimensions};
 
 use std::error::Error;
 use std::process::exit;
 use std::sync::Arc;
 
 use tokio;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::mpsc;
 
 use console_engine::rect_style::BorderStyle;
 use console_engine::{ConsoleEngine, KeyCode};
-
-#[derive(Debug, Clone)]
-pub struct NotificationsDrawer {
-    pub notification_boxes: Arc<Mutex<Vec<Notification>>>,
-}
-
-pub struct ScreenDimensions {
-    pub width: u32,
-    pub height: u32,
-}
-
-impl NotificationsDrawer {
-    pub fn new() -> Self {
-        NotificationsDrawer {
-            notification_boxes: Arc::new(Mutex::new(vec![])),
-        }
-    }
-}
-
-impl ScreenDimensions {
-    pub fn new(w: u32, h: u32) -> Self {
-        Self {
-            width: w,
-            height: h,
-        }
-    }
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

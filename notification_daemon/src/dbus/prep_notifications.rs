@@ -1,22 +1,11 @@
+use std::sync::Arc;
+
+use tokio::sync::Mutex;
+
 #[derive(Debug)]
 pub enum DbusChannel {
     Notify { notification: Notification },
     CloseNotification { unique_id: u32 },
-}
-
-#[derive(Debug, Default, PartialEq, Clone)]
-pub struct Rect {
-    left_up: (i32, i32),
-    right_down: (i32, i32),
-}
-
-impl Rect {
-    pub fn new(left_up: (i32, i32), right_down: (i32, i32)) -> Self {
-        Self {
-            left_up: (left_up),
-            right_down: (right_down),
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -26,6 +15,32 @@ pub struct Notification {
     pub title: String,
     pub body: String,
     pub expire_timeout: i32,
-    pub window: Rect,
     pub unique_id: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct NotificationsDrawer {
+    pub notification_boxes: Arc<Mutex<Vec<Notification>>>,
+}
+
+impl NotificationsDrawer {
+    pub fn new() -> Self {
+        NotificationsDrawer {
+            notification_boxes: Arc::new(Mutex::new(vec![])),
+        }
+    }
+}
+
+pub struct ScreenDimensions {
+    pub width: u32,
+    pub height: u32,
+}
+
+impl ScreenDimensions {
+    pub fn new(w: u32, h: u32) -> Self {
+        Self {
+            width: w,
+            height: h,
+        }
+    }
 }

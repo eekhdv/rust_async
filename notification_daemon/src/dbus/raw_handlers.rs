@@ -1,10 +1,11 @@
-use super::prep_notifications::{DbusChannel, Notification, Rect};
+use super::prep_notifications::{DbusChannel, Notification};
 
 use std::collections::HashMap;
 
 use tokio::sync::mpsc::Sender;
 use zbus::{dbus_interface, zvariant::Value};
 
+#[derive(Debug)]
 pub struct NotificationsHandler {
     pub dbus_tx: Sender<DbusChannel>,
     pub n_counter: u32,
@@ -37,7 +38,6 @@ impl NotificationsHandler {
             title: (title),
             body: (body),
             expire_timeout: (expire_timeout),
-            window: Rect::default(),
             unique_id: n_id,
         };
 
