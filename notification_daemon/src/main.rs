@@ -1,4 +1,6 @@
 use console_engine::{pixel, Color, KeyCode, ConsoleEngine};
+use console_engine::rect_style::BorderStyle;
+
 mod dbus;
 use dbus::prep_notifications::Rect;
 use dbus::{prep_notifications, raw_handlers, service};
@@ -90,12 +92,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 // _notif_box.window = Rect::new((cur_x, cur_y), (cur_x + 20, cur_y + 7));
                 let app_name_len: i32 = _notif_box.app_name.len().try_into().unwrap();
                 let body_len: i32 = _notif_box.body.len().try_into().unwrap();
-                engine.rect(
+                engine.rect_border(
                     cur_x,
                     cur_y,
                     cur_x + 2 + {if app_name_len > body_len { app_name_len } else { body_len } }  + 2,
                     cur_y + 6,
-                    pixel::pxl('#'),
+                    BorderStyle::new_light(),
                 );
 
                 engine.print(cur_x + 2, cur_y + 1, _notif_box.app_name.as_str());
@@ -118,7 +120,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                 engine.draw(); // draw the screen
             }
-            tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         }
     });
 
