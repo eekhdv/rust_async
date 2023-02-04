@@ -3,13 +3,14 @@ use dbus::prep_notifications::{DbusChannel, Notification};
 use dbus::{raw_handlers, service};
 
 use std::error::Error;
+use std::process::exit;
 use std::sync::Arc;
 
 use tokio;
 use tokio::sync::{mpsc, Mutex};
 
 use console_engine::rect_style::BorderStyle;
-use console_engine::ConsoleEngine;
+use console_engine::{ConsoleEngine, KeyCode};
 
 #[derive(Debug, Clone)]
 pub struct NotificationsDrawer {
@@ -82,10 +83,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     tokio::task::spawn(async move {
         let mut engine = ConsoleEngine::init_fill(1).unwrap();
         let cur_screen = ScreenDimensions::new(engine.get_width(), engine.get_height());
+
         loop {
             engine.wait_frame();
             engine.check_resize();
             engine.clear_screen();
+
+            if engine.is_key_pressed(KeyCode::Char('q')) {
+                ConsoleEngine::init_fill(10).unwrap();
+                exit(0);
+            }
 
             let lock = notif_drawer_clone.lock().await;
             let mut cur_x = 1;
@@ -97,25 +104,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 format!("width: {}, height: {}", cur_screen.width, cur_screen.height).as_str(),
             );
             for notif_box in lock.iter() {
-                // if engine.is_key_pressed(KeyCode::Char('q')) {
-                //     break;
-                // }
-
                 let app_name_len: i32 = notif_box.app_name.len().try_into().unwrap();
                 let body_len: i32 = notif_box.body.len().try_into().unwrap();
                 engine.rect_border(
                     cur_x,
                     cur_y,
                     cur_x
-                        + 2
+                        + 4
                         + {
                             if app_name_len > body_len {
                                 app_name_len
                             } else {
                                 body_len
                             }
-                        }
-                        + 2,
+                        },
                     cur_y + 6,
                     BorderStyle::new_light(),
                 );
@@ -130,9 +132,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     cur_x += 30;
                     cur_y = 1;
                 }
-                engine.draw(); // draw the screen
             }
-            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+            engine.draw(); // draw the screen
         }
     });
 
