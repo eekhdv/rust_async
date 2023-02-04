@@ -2,7 +2,7 @@ mod dbus;
 use dbus::prep_notifications::DbusChannel;
 
 mod terminal;
-use terminal::drawing::NotificationsDrawer;
+use terminal::drawing::NotificationBox;
 use terminal::screen::ScreenDimensions;
 
 use std::error::Error;
@@ -23,9 +23,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         n_counter: 0,
     };
 
-    let notif_drawer = NotificationsDrawer::new();
-    let notif_clone = Arc::clone(&notif_drawer.notification_boxes);
-    let notif_drawer_clone = Arc::clone(&notif_drawer.notification_boxes);
+    let notif_box = NotificationBox::new();
+    let n_catcher = Arc::clone(&notif_box.notifications);
+    let n_drawer = Arc::clone(&notif_box.notifications);
 
     dbus::connection::setup_server(notif_handler).await?;
 
@@ -33,24 +33,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
         while let Some(n) = dbus_rx.recv().await {
             match n {
                 DbusChannel::Notify { notification } => {
-                    let mut lock1 = notif_clone.lock().await;
-                    let index = lock1
+                    let mut lock = n_catcher.lock().await;
+                    let index = lock
                         .iter()
                         .position(|x| x.unique_id == notification.unique_id);
                     if let Some(i) = index {
-                        if let Some(v) = lock1.get_mut(i) {
+                        if let Some(v) = lock.get_mut(i) {
                             v.app_name = notification.app_name;
                             v.title = notification.title;
                             v.body = notification.body;
                         }
                     } else {
-                        lock1.push(notification);
+                        lock.push(notification);
                     }
                 }
                 DbusChannel::CloseNotification { unique_id } => {
-                    let mut lock1 = notif_clone.lock().await;
-                    let index = lock1.iter().position(|x| x.unique_id == unique_id).unwrap();
-                    lock1.remove(index);
+                    let mut lock = n_catcher.lock().await;
+                    let index = lock.iter().position(|x| x.unique_id == unique_id).unwrap();
+                    lock.remove(index);
                 }
             }
         }
@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 exit(0);
             }
 
-            let lock = notif_drawer_clone.lock().await;
+            let lock = n_drawer.lock().await;
             let mut cur_x = 1;
             let mut cur_y = 1;
 

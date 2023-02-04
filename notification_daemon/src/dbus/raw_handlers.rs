@@ -32,12 +32,18 @@ impl NotificationsHandler {
             replaced_id
         };
 
+        let n_timer = match &expire_timeout {
+            ..=-1 => 10_000,
+            0 => i32::MAX,
+            1.. => expire_timeout,
+        };
+
         let n = Notification {
             app_name: (app_name),
             app_icon: (app_icon),
             title: (title),
             body: (body),
-            expire_timeout: (expire_timeout),
+            expire_timeout: (n_timer),
             unique_id: n_id,
         };
 

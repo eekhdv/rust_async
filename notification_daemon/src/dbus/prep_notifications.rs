@@ -13,4 +13,3 @@ pub struct Notification {
     pub expire_timeout: i32,
     pub unique_id: u32,
 }
-

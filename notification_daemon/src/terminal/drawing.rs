@@ -4,15 +4,14 @@ use tokio::sync::Mutex;
 use crate::dbus::prep_notifications::Notification;
 
 #[derive(Debug, Clone)]
-pub struct NotificationsDrawer {
-    pub notification_boxes: Arc<Mutex<Vec<Notification>>>,
+pub struct NotificationBox {
+    pub notifications: Arc<Mutex<Vec<Notification>>>,
 }
 
-impl NotificationsDrawer {
+impl NotificationBox {
     pub fn new() -> Self {
-        NotificationsDrawer {
-            notification_boxes: Arc::new(Mutex::new(vec![])),
+        Self {
+            notifications: Arc::new(Mutex::new(vec![])),
         }
     }
 }
-
