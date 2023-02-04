@@ -1,5 +1,7 @@
+#[derive(Debug)]
 pub enum DbusChannel {
     Notify { notification: Notification },
+    CloseNotification { unique_id: u32 },
 }
 
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -25,4 +27,5 @@ pub struct Notification {
     pub body: String,
     pub expire_timeout: i32,
     pub window: Rect,
+    pub unique_id: u32,
 }
