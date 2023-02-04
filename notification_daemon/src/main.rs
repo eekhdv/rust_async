@@ -1,5 +1,5 @@
-use console_engine::{pixel, Color, KeyCode, ConsoleEngine};
 use console_engine::rect_style::BorderStyle;
+use console_engine::{pixel, Color, ConsoleEngine, KeyCode};
 
 mod dbus;
 use dbus::prep_notifications::Rect;
@@ -21,10 +21,9 @@ struct ScreenDimensions {
     height: u32,
 }
 
-
 // impl Iterator for NotificationsDrawer {
 //     type Item = prep_notifications::Notification;
-// 
+//
 //     fn next(&mut self) -> Option<Self::Item> {
 //         self.notification_boxes.pop()
 //     }
@@ -32,13 +31,18 @@ struct ScreenDimensions {
 
 impl NotificationsDrawer {
     fn new() -> Self {
-        NotificationsDrawer { notification_boxes: Arc::new(Mutex::new(vec![])) } 
+        NotificationsDrawer {
+            notification_boxes: Arc::new(Mutex::new(vec![])),
+        }
     }
 }
 
 impl ScreenDimensions {
     fn new(w: u32, h: u32) -> Self {
-        Self { width: w, height: h }
+        Self {
+            width: w,
+            height: h,
+        }
     }
 }
 
@@ -82,9 +86,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let mut cur_x = 1;
             let mut cur_y = 1;
 
-            engine.print(0, 0, format!("width: {}, height: {}", cur_screen.width, cur_screen.height).as_str());
+            engine.print(
+                0,
+                0,
+                format!("width: {}, height: {}", cur_screen.width, cur_screen.height).as_str(),
+            );
             for _notif_box in lock.iter() {
-                                       // exit check
+                // exit check
                 // if engine.is_key_pressed(KeyCode::Char('q')) {
                 //     break;
                 // }
@@ -95,7 +103,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 engine.rect_border(
                     cur_x,
                     cur_y,
-                    cur_x + 2 + {if app_name_len > body_len { app_name_len } else { body_len } }  + 2,
+                    cur_x
+                        + 2
+                        + {
+                            if app_name_len > body_len {
+                                app_name_len
+                            } else {
+                                body_len
+                            }
+                        }
+                        + 2,
                     cur_y + 6,
                     BorderStyle::new_light(),
                 );

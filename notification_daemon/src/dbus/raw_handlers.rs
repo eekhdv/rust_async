@@ -31,19 +31,25 @@ impl NotificationsHandler {
             expire_timeout: (expire_timeout),
             window: Rect::default(),
         };
-        if let Err(_) = self.dbus_tx
+        if let Err(_) = self
+            .dbus_tx
             .send(DbusChannel::Notify {
                 notification: notif,
             })
-            .await {
+            .await
+        {
             return Ok(1);
         }
         Ok(0)
     }
-    
+
     #[dbus_interface(name = "GetCapabilities")]
     pub async fn get_capabilities(&self) -> Vec<String> {
-        let capabilities = vec!["actions".to_string(), "body".to_string(), "persistence".to_string()];
+        let capabilities = vec![
+            "actions".to_string(),
+            "body".to_string(),
+            "persistence".to_string(),
+        ];
         capabilities
     }
 
@@ -53,7 +59,13 @@ impl NotificationsHandler {
     }
 
     #[dbus_interface(name = "GetServerInformation")]
-    pub async fn get_serv_info(&self, _name: String, _vendor: String, _version: String, _spec_version: String) {
+    pub async fn get_serv_info(
+        &self,
+        _name: String,
+        _vendor: String,
+        _version: String,
+        _spec_version: String,
+    ) {
         unimplemented!()
     }
 

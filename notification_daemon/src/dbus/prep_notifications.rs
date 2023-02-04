@@ -10,7 +10,10 @@ pub struct Rect {
 
 impl Rect {
     pub fn new(left_up: (i32, i32), right_down: (i32, i32)) -> Self {
-        Self { left_up: (left_up), right_down: (right_down) }
+        Self {
+            left_up: (left_up),
+            right_down: (right_down),
+        }
     }
 }
 
@@ -23,4 +26,3 @@ pub struct Notification {
     pub expire_timeout: i32,
     pub window: Rect,
 }
-
