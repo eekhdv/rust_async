@@ -2,6 +2,7 @@ mod dbus;
 use dbus::prep_notifications::{set_notif_lifetime, DbusChannel};
 
 mod terminal;
+use terminal::drawing::methods::*;
 use terminal::drawing::NotificationBox;
 use terminal::screen::ScreenDimensions;
 
@@ -12,7 +13,6 @@ use std::sync::Arc;
 use tokio;
 use tokio::sync::mpsc;
 
-use console_engine::rect_style::BorderStyle;
 use console_engine::{ConsoleEngine, KeyCode};
 
 #[tokio::main]
@@ -34,8 +34,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             match n {
                 DbusChannel::Notify { notification } => {
                     let mut lock = n_catcher.lock().await;
+
                     let unique_id: u32 = notification.unique_id;
                     let expire_timeout: i32 = notification.expire_timeout;
+
                     let index = lock
                         .iter()
                         .position(|x| x.unique_id == notification.unique_id);
@@ -50,7 +52,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     }
                     if expire_timeout != i32::MAX {
                         set_notif_lifetime(unique_id, expire_timeout as u64);
-                    } 
+                    }
                 }
                 DbusChannel::CloseNotification { unique_id } => {
                     let mut lock = n_catcher.lock().await;
@@ -63,12 +65,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     tokio::task::spawn(async move {
         let mut engine = ConsoleEngine::init_fill(10).unwrap();
-        let cur_screen = ScreenDimensions::new(engine.get_width() as i32, engine.get_height() as i32);
+        let mut longest_field = 0;
+        let mut cur_screen =
+            ScreenDimensions::new(engine.get_width() as i32, engine.get_height() as i32);
 
         loop {
             engine.wait_frame();
             engine.check_resize();
             engine.clear_screen();
+            cur_screen.width = engine.get_width() as i32;
+            cur_screen.height = engine.get_height() as i32;
 
             if engine.is_key_pressed(KeyCode::Char('q')) {
                 ConsoleEngine::init_fill(10).unwrap();
@@ -76,41 +82,30 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
 
             let lock = n_drawer.lock().await;
-            let mut cur_x = 1;
-            let mut cur_y = 1;
+            let mut left_up: (i32, i32) = (1, 1);
 
-            engine.rect_border(0, 0, cur_screen.width - 1, cur_screen.height - 1, BorderStyle::new_light());
-            // engine.print(
-            //     0,
-            //     0,
-            //     format!("width: {}, height: {}", cur_screen.width, cur_screen.height).as_str(),
-            // );
+            draw_frame(&mut engine, cur_screen.width - 1, cur_screen.height - 1);
+
             for notif_box in lock.iter() {
-                let app_name_len: i32 = notif_box.app_name.len().try_into().unwrap();
-                let body_len: i32 = notif_box.body.len().try_into().unwrap();
-                engine.rect_border(
-                    cur_x,
-                    cur_y,
-                    cur_x + 4 + {
-                        if app_name_len > body_len {
-                            app_name_len
-                        } else {
-                            body_len
-                        }
-                    },
-                    cur_y + 6,
-                    BorderStyle::new_light(),
-                );
+                let app_name = &notif_box.app_name;
+                let title = &notif_box.title;
+                let body = &notif_box.body;
 
-                engine.print(cur_x + 2, cur_y + 1, notif_box.app_name.as_str());
-                engine.print(cur_x + 2, cur_y + 3, notif_box.title.as_str());
-                engine.print(cur_x + 2, cur_y + 5, notif_box.body.as_str());
+                let cur_max_field = get_longest_field(app_name.len(), title.len(), body.len());
+                if cur_max_field > longest_field {
+                    longest_field = cur_max_field
+                };
 
-                cur_y += 8;
+                draw_box_for_notification(&mut engine, left_up, cur_max_field as i32);
 
-                if cur_y >= cur_screen.height {
-                    cur_x += 30;
-                    cur_y = 1;
+                print_app_name(&mut engine, left_up, app_name);
+                print_title(&mut engine, left_up, title);
+                print_body(&mut engine, left_up, body);
+
+                left_up.1 += 8;
+
+                if left_up.1 >= cur_screen.height - 3 {
+                    move_next_line(&mut left_up, &mut longest_field);
                 }
             }
             engine.draw(); // draw the screen
