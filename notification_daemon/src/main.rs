@@ -41,7 +41,10 @@ impl ScreenDimensions {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let (dbus_tx, mut dbus_rx) = mpsc::channel(128);
-    let notif_handler = raw_handlers::NotificationsHandler { dbus_tx: (dbus_tx), n_counter: 0 };
+    let notif_handler = raw_handlers::NotificationsHandler {
+        dbus_tx: (dbus_tx),
+        n_counter: 0,
+    };
 
     let notif_drawer = NotificationsDrawer::new();
     let notif_clone = Arc::clone(&notif_drawer.notification_boxes);
@@ -54,13 +57,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
             match n {
                 DbusChannel::Notify { notification } => {
                     let mut lock1 = notif_clone.lock().await;
-                    lock1.push(notification);
-                },
+                    let index = lock1
+                        .iter()
+                        .position(|x| x.unique_id == notification.unique_id);
+                    if let Some(i) = index {
+                        if let Some(v) = lock1.get_mut(i) {
+                            v.app_name = notification.app_name;
+                            v.title = notification.title;
+                            v.body = notification.body;
+                        }
+                    } else {
+                        lock1.push(notification);
+                    }
+                }
                 DbusChannel::CloseNotification { unique_id } => {
                     let mut lock1 = notif_clone.lock().await;
                     let index = lock1.iter().position(|x| x.unique_id == unique_id).unwrap();
                     lock1.remove(index);
-                },
+                }
             }
         }
     });

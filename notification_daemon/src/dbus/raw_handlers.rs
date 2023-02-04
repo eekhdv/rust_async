@@ -24,31 +24,31 @@ impl NotificationsHandler {
         _hints: HashMap<String, Value<'_>>,
         expire_timeout: i32,
     ) -> zbus::fdo::Result<u32> {
-        let notif_id = if replaced_id == 0 {
+        let n_id = if replaced_id == 0 {
             self.n_counter += 1;
             self.n_counter
-        } else { replaced_id };
+        } else {
+            replaced_id
+        };
 
-        let notif = Notification {
+        let n = Notification {
             app_name: (app_name),
             app_icon: (app_icon),
             title: (title),
             body: (body),
             expire_timeout: (expire_timeout),
             window: Rect::default(),
-            unique_id: notif_id,
+            unique_id: n_id,
         };
 
         if let Err(_) = self
             .dbus_tx
-            .send(DbusChannel::Notify {
-                notification: notif,
-            })
+            .send(DbusChannel::Notify { notification: n })
             .await
         {
             return Ok(1);
         }
-        Ok(notif_id)
+        Ok(n_id)
     }
 
     #[dbus_interface(name = "GetCapabilities")]
@@ -63,7 +63,12 @@ impl NotificationsHandler {
 
     #[dbus_interface(name = "CloseNotification")]
     pub async fn close_notification(&self, unique_id: u32) {
-        self.dbus_tx.send(DbusChannel::CloseNotification { unique_id: (unique_id) }).await.unwrap();
+        self.dbus_tx
+            .send(DbusChannel::CloseNotification {
+                unique_id: (unique_id),
+            })
+            .await
+            .unwrap();
     }
 
     #[dbus_interface(name = "GetServerInformation")]
