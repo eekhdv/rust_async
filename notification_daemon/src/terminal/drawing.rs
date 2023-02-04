@@ -44,14 +44,23 @@ pub mod methods {
     }
 
     pub fn print_body(engine: &mut ConsoleEngine, left_up: (i32, i32), body: &str) {
-        let mut len = body.len();
-        if len > 30 {
-            len = 30
-        };
+        let mut new_body = String::new();
+        let mut count = 0;
+            
+        for l in body.replace("\n", " ").chars() {
+            new_body.push(l);
+            count += l.len_utf8();
+            if count >= 29 {
+                new_body.push('.');
+                new_body.push('.');
+                new_body.push('.');
+                break;
+            }
+        }
         engine.print(
             left_up.0 + HOR_BORDER_ALIGN,
             left_up.1 + VER_BORDER_ALIGN + BODY_SHIFT,
-            &body[..len],
+            &new_body,
         );
     }
 
