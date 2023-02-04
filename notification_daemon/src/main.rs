@@ -1,5 +1,5 @@
 mod dbus;
-use dbus::prep_notifications::DbusChannel;
+use dbus::prep_notifications::{set_notif_lifetime, DbusChannel};
 
 mod terminal;
 use terminal::drawing::NotificationBox;
@@ -34,8 +34,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             match n {
                 DbusChannel::Notify { notification } => {
                     let mut lock = n_catcher.lock().await;
-                    let expire_timeout = notification.expire_timeout;
-                    let unique_id = notification.unique_id;
+                    let unique_id: u32 = notification.unique_id;
+                    let expire_timeout: i32 = notification.expire_timeout;
                     let index = lock
                         .iter()
                         .position(|x| x.unique_id == notification.unique_id);
@@ -48,24 +48,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     } else {
                         lock.push(notification);
                     }
-                    if expire_timeout == i32::MAX {
-                        continue;
-                    }
-                    tokio::task::spawn(async move {
-                        tokio::time::sleep(std::time::Duration::from_millis(expire_timeout as u64))
-                            .await;
-                        let connection = zbus::Connection::session().await.unwrap();
-                        let _ = connection
-                            .call_method(
-                                Some("org.freedesktop.Notifications"),
-                                "/org/freedesktop/Notifications",
-                                Some("org.freedesktop.Notifications"),
-                                "CloseNotification",
-                                &(unique_id),
-                            )
-                            .await
-                            .unwrap();
-                    });
+                    if expire_timeout != i32::MAX {
+                        set_notif_lifetime(unique_id, expire_timeout as u64);
+                    } 
                 }
                 DbusChannel::CloseNotification { unique_id } => {
                     let mut lock = n_catcher.lock().await;
@@ -77,7 +62,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     });
 
     tokio::task::spawn(async move {
-        let mut engine = ConsoleEngine::init_fill(1).unwrap();
+        let mut engine = ConsoleEngine::init_fill(10).unwrap();
         let cur_screen = ScreenDimensions::new(engine.get_width(), engine.get_height());
 
         loop {
@@ -94,11 +79,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let mut cur_x = 1;
             let mut cur_y = 1;
 
-            engine.print(
-                0,
-                0,
-                format!("width: {}, height: {}", cur_screen.width, cur_screen.height).as_str(),
-            );
+            engine.rect_border(0, 0, cur_screen.width as i32 - 1, cur_screen.height as i32 - 1, BorderStyle::new_light());
+            // engine.print(
+            //     0,
+            //     0,
+            //     format!("width: {}, height: {}", cur_screen.width, cur_screen.height).as_str(),
+            // );
             for notif_box in lock.iter() {
                 let app_name_len: i32 = notif_box.app_name.len().try_into().unwrap();
                 let body_len: i32 = notif_box.body.len().try_into().unwrap();
