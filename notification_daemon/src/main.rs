@@ -40,9 +40,6 @@ impl ScreenDimensions {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // initializes a screen filling the terminal of at least 50x20 of size with a target of 3 frame per second
-    // let mut engine = console_engine::ConsoleEngine::init_fill(10).unwrap();
-
     let (dbus_tx, mut dbus_rx) = mpsc::channel(128);
     let notif_handler = raw_handlers::NotificationsHandler { dbus_tx: (dbus_tx) };
 
@@ -56,11 +53,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         while let Some(n) = dbus_rx.recv().await {
             match n {
                 prep_notifications::DbusChannel::Notify { notification } => {
-                    // let _engine = console_engine::ConsoleEngine::init_fill_require(50, 20, 10).unwrap();
                     let mut lock1 = notif_clone.lock().await;
                     lock1.push(notification);
-                    // notif_clone.try_lock().unwrap().push(notification);
-                    // println!("test-> {:#?}", lock1.pop());
                 }
             }
         }
@@ -70,8 +64,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let mut engine = ConsoleEngine::init_fill(1).unwrap();
         let cur_screen = ScreenDimensions::new(engine.get_width(), engine.get_height());
         loop {
-            engine.wait_frame(); // wait for next frame + capture inputs
-            engine.check_resize(); // resize the terminal if its size has changed
+            engine.wait_frame();
+            engine.check_resize();
             engine.clear_screen();
 
             let lock = notif_drawer_clone.lock().await;
