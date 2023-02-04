@@ -1,5 +1,8 @@
 mod dbus;
-use dbus::prep_notifications::{DbusChannel, NotificationsDrawer, ScreenDimensions};
+use dbus::prep_notifications::{DbusChannel, ScreenDimensions};
+
+mod terminal;
+use terminal::drawing::NotificationsDrawer;
 
 use std::error::Error;
 use std::process::exit;
