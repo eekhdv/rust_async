@@ -1,6 +1,6 @@
 mod dbus;
-// use dbus::prep_notifications::Rect;
-use dbus::{prep_notifications, raw_handlers, service};
+use dbus::prep_notifications::{DbusChannel, Notification};
+use dbus::{raw_handlers, service};
 
 use std::error::Error;
 use std::sync::Arc;
@@ -13,7 +13,7 @@ use console_engine::ConsoleEngine;
 
 #[derive(Debug, Clone)]
 pub struct NotificationsDrawer {
-    pub notification_boxes: Arc<Mutex<Vec<prep_notifications::Notification>>>,
+    pub notification_boxes: Arc<Mutex<Vec<Notification>>>,
 }
 
 pub struct ScreenDimensions {
@@ -41,7 +41,7 @@ impl ScreenDimensions {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let (dbus_tx, mut dbus_rx) = mpsc::channel(128);
-    let notif_handler = raw_handlers::NotificationsHandler { dbus_tx: (dbus_tx) };
+    let notif_handler = raw_handlers::NotificationsHandler { dbus_tx: (dbus_tx), n_counter: 0 };
 
     let notif_drawer = NotificationsDrawer::new();
     let notif_clone = Arc::clone(&notif_drawer.notification_boxes);
@@ -52,10 +52,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     tokio::task::spawn(async move {
         while let Some(n) = dbus_rx.recv().await {
             match n {
-                prep_notifications::DbusChannel::Notify { notification } => {
+                DbusChannel::Notify { notification } => {
                     let mut lock1 = notif_clone.lock().await;
                     lock1.push(notification);
-                }
+                },
+                DbusChannel::CloseNotification { unique_id } => {
+                    let mut lock1 = notif_clone.lock().await;
+                    let index = lock1.iter().position(|x| x.unique_id == unique_id).unwrap();
+                    lock1.remove(index);
+                },
             }
         }
     });
