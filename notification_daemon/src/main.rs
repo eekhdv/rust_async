@@ -1,6 +1,5 @@
 mod dbus;
 use dbus::prep_notifications::{DbusChannel, Notification};
-use dbus::{raw_handlers, service};
 
 use std::error::Error;
 use std::process::exit;
@@ -42,7 +41,7 @@ impl ScreenDimensions {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let (dbus_tx, mut dbus_rx) = mpsc::channel(128);
-    let notif_handler = raw_handlers::NotificationsHandler {
+    let notif_handler = dbus::raw_handlers::NotificationsHandler {
         dbus_tx: (dbus_tx),
         n_counter: 0,
     };
@@ -51,7 +50,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let notif_clone = Arc::clone(&notif_drawer.notification_boxes);
     let notif_drawer_clone = Arc::clone(&notif_drawer.notification_boxes);
 
-    service::setup_server(notif_handler).await?;
+    dbus::connection::setup_server(notif_handler).await?;
 
     tokio::task::spawn(async move {
         while let Some(n) = dbus_rx.recv().await {
@@ -109,15 +108,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 engine.rect_border(
                     cur_x,
                     cur_y,
-                    cur_x
-                        + 4
-                        + {
-                            if app_name_len > body_len {
-                                app_name_len
-                            } else {
-                                body_len
-                            }
-                        },
+                    cur_x + 4 + {
+                        if app_name_len > body_len {
+                            app_name_len
+                        } else {
+                            body_len
+                        }
+                    },
                     cur_y + 6,
                     BorderStyle::new_light(),
                 );
