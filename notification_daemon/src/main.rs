@@ -34,6 +34,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             match n {
                 DbusChannel::Notify { notification } => {
                     let mut lock = n_catcher.lock().await;
+                    let expire_timeout = notification.expire_timeout;
+                    let unique_id = notification.unique_id;
                     let index = lock
                         .iter()
                         .position(|x| x.unique_id == notification.unique_id);
@@ -46,6 +48,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     } else {
                         lock.push(notification);
                     }
+                    if expire_timeout == i32::MAX {
+                        continue;
+                    }
+                    tokio::task::spawn(async move {
+                        tokio::time::sleep(std::time::Duration::from_millis(expire_timeout as u64))
+                            .await;
+                        let connection = zbus::Connection::session().await.unwrap();
+                        let _ = connection
+                            .call_method(
+                                Some("org.freedesktop.Notifications"),
+                                "/org/freedesktop/Notifications",
+                                Some("org.freedesktop.Notifications"),
+                                "CloseNotification",
+                                &(unique_id),
+                            )
+                            .await
+                            .unwrap();
+                    });
                 }
                 DbusChannel::CloseNotification { unique_id } => {
                     let mut lock = n_catcher.lock().await;
