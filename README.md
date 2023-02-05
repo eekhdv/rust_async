@@ -35,6 +35,8 @@
  - [Console Engine](https://github.com/VincentFoulon80/console_engine)
  - [Tokio-rs](https://github.com/tokio-rs/tokio)
  - [Futures-rs](https://github.com/rust-lang/futures-rs)
+ - [Mutex](https://doc.rust-lang.org/std/sync/struct.Mutex.html)
+ - [Arc](https://doc.rust-lang.org/std/sync/struct.Arc.html)
 
 
 <!-- Features -->
@@ -43,7 +45,12 @@
   <summary>Notification daemon</summary>
   <p>
 
-  - Hello
+  - usign D-Bus for catching notifications.
+  - using tokio for async.
+  - draw simple but stylish boxes around notifications.
+  - supports window resizing.
+  - supports immortal notifications as well as mortal.
+  - supports all apps using D-Bus interface.
     
   </p>
 </details>
@@ -52,7 +59,7 @@
   <summary>Web server</summary>
   <p>
 
-  - Hello
+  - serving requests concurrently.
 
   </p>
 </details>
