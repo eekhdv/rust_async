@@ -14,10 +14,3 @@ features = [
     "event",
 ]
 
-[dependencies.uuid]
-version = "1.2.2"
-features = [
-    "v4",
-    "fast-rng",
-    "macro-diagnostics",
-]
