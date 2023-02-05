@@ -97,15 +97,15 @@ $ cargo run --bin web_server
 <!-- Web server -->
 #### Web Server
 
-```http
+```
 localhost:7878/
 ```
 > hello world page `./web_server/src/hello.html`
-```http
+```
 localhost:7878/sleep
 ```
 > sleep for a 10 seconds (in order to test concurrency)
-```http
+```
 localhost:7878/smthfkwejfllkdk
 ```
 > Ooops! :-) `./web_server/src/404.html`
