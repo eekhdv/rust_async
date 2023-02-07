@@ -1,5 +1,6 @@
 mod dbus;
 use dbus::prep_notifications::{set_notif_lifetime, DbusChannel};
+use zbus::Connection;
 
 mod terminal;
 use terminal::drawing::methods::*;
@@ -23,11 +24,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
         n_counter: 0,
     };
 
+    let srvc_name = "org.freedesktop.Notifications";
+    let srvc_obj = "/org/freedesktop/Notifications";
+
+    let connection = Connection::session()
+        .await?;
+    connection
+        .object_server()
+        .at(srvc_obj, notif_handler)
+        .await?;
+    connection
+        .request_name(srvc_name)
+        .await?;
+
     let notif_box = NotificationBox::new();
     let n_catcher = Arc::clone(&notif_box.notifications);
     let n_drawer = Arc::clone(&notif_box.notifications);
-
-    dbus::connection::setup_server(notif_handler).await?;
 
     tokio::task::spawn(async move {
         while let Some(n) = dbus_rx.recv().await {
