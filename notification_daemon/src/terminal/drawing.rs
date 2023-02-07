@@ -49,7 +49,7 @@ pub mod methods {
             
         for l in body.replace("\n", " ").chars() {
             new_body.push(l);
-            count += l.len_utf8();
+            count += 1;
             if count >= 29 {
                 new_body.push('.');
                 new_body.push('.');
