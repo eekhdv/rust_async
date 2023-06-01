@@ -11,6 +11,8 @@ env:
 
 jobs:
   build_web_app:
+    permissions:
+      checks: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -35,6 +37,8 @@ jobs:
           retention-days: 90
       
   build_notification_daemon:
+    permissions:
+      checks: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
