@@ -27,7 +27,7 @@ jobs:
     needs: check_web_app
     steps:
       - name: Build
-        run: cargo build --verbose
+        run: cargo build --verbose --bin web_app
         
   upload_web_app:
     runs-on: ubuntu-latest
@@ -60,7 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cargo build --verbose
+        run: cargo build --verbose --bin notification_daemon
         
   upload_notification_daemon:
     runs-on: ubuntu-latest
