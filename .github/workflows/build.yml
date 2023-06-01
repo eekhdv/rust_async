@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: check_web_app
     steps:
+      - uses: actions/checkout@v3
       - name: Build
         run: cargo build --verbose --bin web_app
         
