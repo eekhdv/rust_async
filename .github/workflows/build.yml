@@ -10,25 +10,31 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build_web_app:
+  check_web_app:
     permissions:
       checks: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
       - name: Clippy check
         run: rustup component add clippy
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      
+          
+  build_web_app:
+    runs-on: ubuntu-latest
+    needs: check_web_app
+    steps:
       - name: Build
         run: cargo build --verbose
-      
+        
+  upload_web_app:
+    runs-on: ubuntu-latest
+    needs: build_web_app
+    steps:
       - name: Build release
         run: cargo build --release --bin web_server
-        
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v3.1.2
         with:
@@ -36,25 +42,32 @@ jobs:
           path: .target/release/web_server
           retention-days: 90
       
-  build_notification_daemon:
+  check_notification_daemon:
     permissions:
       checks: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
       - name: Clippy check
         run: rustup component add clippy
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           
+  build_notification_daemon:
+    runs-on: ubuntu-latest
+    needs: check_notification_daemon
+    steps:
+      - uses: actions/checkout@v3
       - name: Build
         run: cargo build --verbose
-      
+        
+  upload_notification_daemon:
+    runs-on: ubuntu-latest
+    needs: check_notification_daemon
+    steps:
       - name: Build release
         run: cargo build --release --bin notification_daemon
-  
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v3.1.2
         with:
