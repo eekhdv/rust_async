@@ -1,8 +1,6 @@
-name: Rust
+name: build apps
 
 on:
-  push:
-    branches: [ "*" ]
   pull_request:
     branches: [ "main" ]
 
@@ -10,11 +8,38 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build_web_app:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v3
+      
+      - name: Build
+        run: cargo build --verbose
+      
+      - name: Build release
+        run: cargo build --release --bin web_server
+        
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: web_server
+          path: .target/release/web_server
+          retention-days: 90
+      
+  build_notification_daemon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Build
+        run: cargo build --verbose
+      
+      - name: Build release
+        run: cargo build --release --bin notification_daemon
+  
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: notification_daemon
+          path: .target/release/notification_daemon
+          retention-days: 90
