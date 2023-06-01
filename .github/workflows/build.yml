@@ -36,12 +36,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build release
-        run: cargo build --release --bin web_server
+        run: |
+          cargo build --release --bin web_server
+          ls -la
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v3.1.2
         with:
           name: web_server
-          path: .target/release/web_server
+          path: ./target/release/web_server
           retention-days: 90
       
   check_notification_daemon:
@@ -70,10 +72,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build release
-        run: cargo build --release --bin notification_daemon
+        run: |
+          cargo build --release --bin notification_daemon
+          ls -la
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v3.1.2
         with:
           name: notification_daemon
-          path: .target/release/notification_daemon
+          path: ./target/release/notification_daemon
           retention-days: 90
