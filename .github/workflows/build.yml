@@ -1,6 +1,8 @@
 name: build apps
 
 on:
+  push:
+    branches: [ "*" ]
   pull_request:
     branches: [ "main" ]
 
@@ -12,6 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
+      - name: Clippy check
+        run: rustup component add clippy
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Build
         run: cargo build --verbose
@@ -31,6 +39,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
+      - name: Clippy check
+        run: rustup component add clippy
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
       - name: Build
         run: cargo build --verbose
       
