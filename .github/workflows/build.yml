@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cargo build --verbose --bin web_app
+        run: cargo build --verbose --bin web_server
         
   upload_web_app:
     runs-on: ubuntu-latest
