@@ -84,7 +84,7 @@ jobs:
 
   gdrive-upload:
     runs-on: ubuntu-latest
-    needs: [build_web_app, build_notification_daemon]
+    #needs: [build_web_app, build_notification_daemon]
     steps:
       - uses: actions/checkout@v3
       - name: Archive files
@@ -99,5 +99,5 @@ jobs:
           credentials: ${{ secrets.credentials }}
           filename: "archive.zip"
           folderId: ${{ secrets.folderId }}
-          name: ${APP_NAME}
+          name: $(APP_NAME)
           overwrite: "true"
