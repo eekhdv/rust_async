@@ -81,8 +81,6 @@ jobs:
           name: notification_daemon
           path: ./target/release/notification_daemon
           retention-days: 90
-          
-          
 
   gdrive-upload:
     runs-on: ubuntu-latest
@@ -94,12 +92,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install zip
           zip -r archive.zip *
-          ls -la
+          echo "APP_NAME=$(date --rfc-3339=date)_rust_async_apps.zip" >> ${GITHUB_ENV}
       - name: Upload to gdrive
         uses: adityak74/google-drive-upload-git-action@main
         with:
           credentials: ${{ secrets.credentials }}
           filename: "archive.zip"
           folderId: ${{ secrets.folderId }}
-          name: "rust_async_apps.zip"
+          name: ${APP_NAME}
           overwrite: "true"
