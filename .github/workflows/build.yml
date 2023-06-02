@@ -86,7 +86,7 @@ jobs:
 
   gdrive-upload:
     runs-on: ubuntu-latest
-    needs: [build_web_app, build_notification_daemon]
+    #needs: [build_web_app, build_notification_daemon]
     steps:
       - uses: actions/checkout@v3
       - name: Archive files
@@ -94,6 +94,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install zip
           zip -r archive.zip *
+          ls -la
       - name: Upload to gdrive
         uses: adityak74/google-drive-upload-git-action@main
         with:
