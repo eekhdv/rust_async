@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Clippy check
+      - name: Clippy check web server
         run: rustup component add clippy
       - uses: actions-rs/clippy-check@v1
         with:
@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Clippy check
+      - name: Clippy check notification daemon
         run: rustup component add clippy
       - uses: actions-rs/clippy-check@v1
         with:
