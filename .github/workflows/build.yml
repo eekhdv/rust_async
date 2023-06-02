@@ -2,7 +2,10 @@ name: build apps
 
 on:
   push:
-    branches: [ "*" ]
+    branches: 
+      - "*"
+    branches-ignore:
+      - "main"
   pull_request:
     branches: [ "main" ]
 
