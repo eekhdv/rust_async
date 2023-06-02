@@ -99,5 +99,5 @@ jobs:
           credentials: ${{ secrets.credentials }}
           filename: "archive.zip"
           folderId: ${{ secrets.folderId }}
-          name: $APP_NAME
+          name: ${{ APP_NAME }}
           overwrite: "true"
