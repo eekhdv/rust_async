@@ -81,3 +81,26 @@ jobs:
           name: notification_daemon
           path: ./target/release/notification_daemon
           retention-days: 90
+          
+          
+
+  gdrive-upload:
+    runs-on: ubuntu-latest
+    needs: |
+      build_web_app
+      build_notification_daemon
+    steps:
+      - uses: actions/checkout@v3
+      - name: Archive files
+        run: |
+          sudo apt-get update
+          sudo apt-get install zip
+          zip -r archive.zip *
+      - name: Upload to gdrive
+        uses: mathisve/gdrive-upload-action@main
+        with:
+          filename: archive.zip
+          name: rust_async_project.zip
+          folderId: ${{ secrets.folderId }}
+          credentials: ${{ secrets.credentials }}
+          encoded: true
