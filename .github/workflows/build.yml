@@ -8,7 +8,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  APP_NAME: $(date --rfc-3339=date)_rust_async_apps.zip
 
 jobs:
   check_web_app:
@@ -93,11 +92,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install zip
           zip -r archive.zip *
+          echo "APP_NAME=$(date --rfc-3339=date)_rust_async_apps.zip" >> "$GITHUB_ENV"
       - name: Upload to gdrive
         uses: adityak74/google-drive-upload-git-action@main
         with:
           credentials: ${{ secrets.credentials }}
           filename: "archive.zip"
           folderId: ${{ secrets.folderId }}
-          name: ${{ APP_NAME }}
+          name: ${{ env.APP_NAME }}
           overwrite: "true"
