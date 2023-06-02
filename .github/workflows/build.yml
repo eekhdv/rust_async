@@ -95,10 +95,10 @@ jobs:
           sudo apt-get install zip
           zip -r archive.zip *
       - name: Upload to gdrive
-        uses: mathisve/gdrive-upload-action@main
+        uses: adityak74/google-drive-upload-git-action@main
         with:
-          filename: archive.zip
-          name: rust_async_project.zip
-          folderId: ${{ secrets.folderId }}
           credentials: ${{ secrets.credentials }}
-          encoded: true
+          filename: "archive.zip"
+          folderId: ${{ secrets.folderId }}
+          name: "rust_async_apps.zip"
+          overwrite: "true"
